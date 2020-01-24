@@ -1,0 +1,469 @@
+---
+title: "Final Project"
+author: "Ming Ki Toby Cheng"
+date: "11/27/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(radiant)
+library(tidyverse)
+library(ggmap)
+```
+
+#### Cleaning/Filtering Data
+```{r}
+## Load commands
+Sheet_mask_survey_data_clean <- readr::read_csv("Sheet_mask_survey_data_clean.csv", n_max = Inf) %>%
+  fix_names() %>%
+  to_fct()
+register("Sheet_mask_survey_data_clean")
+```
+
+```{r}
+## filter and sort the dataset
+Mask_Final_Data <- Sheet_mask_survey_data_clean %>%
+  filter(Finished != 'FALSE'  & DistributionChannel != 'preview') %>%
+  select(StartDate:Q25)
+register("Mask_Final_Data", "Sheet_mask_survey_data_clean")
+# dtab(Mask_Final_Data, dec = 2, nr = 100) %>% render()
+```
+
+#### Gender Breakdown of Survey Results
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q7", "Q2"), 
+  normalize = "column", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE) + labs(title = "Sheet Mask Usage breakdown by Gender", x = "Have you used sheet masks before?", fill = 'Gender')
+# dtab(result, perc = TRUE) %>% render()
+```
+
+#### Age Breakdown of Survey Results
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q7", "Q3"), 
+  normalize = "column", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE) + labs(title = "Sheet Mask Usage breakdown by Age", x = "Have you used sheet masks before?", fill = 'Age')
+# dtab(result, perc = TRUE) %>% render()
+```
+
+#### Ethnicity Breakdown of Survey Results
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q7", "Q4"), 
+  normalize = "column", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE) + labs(title = "Sheet Mask Usage breakdown by Ethnicity", x = "Have you used sheet masks before?", fill = "Ethnicity")
+# dtab(result, perc = TRUE) %>% render()
+```
+
+#### Employment Breakdown of Survey Results
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q7", "Q5"), 
+  normalize = "column", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE)+ labs(title = "Sheet Mask Usage breakdown by Current Employment", x = "Have you used sheet masks before?", fill = "Current Employment Status")
+# dtab(result, perc = TRUE) %>% render()
+```
+
+#### Skin Type Breakdown of Survey Results
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q7", "Q6"), 
+  normalize = "column", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE) + labs(title = "Sheet Mask Usage breakdown by Skin Type", x = "Have you used sheet masks before?", fill = "Skin Type")
+# dtab(result, perc = TRUE) %>% render()
+```
+
+#### Respondents across the globe
+```{r echo=FALSE}
+# extract data for coordinates on map 
+qmplot(x=LocationLongitude, y=LocationLatitude, data = Mask_Final_Data)
+#par("mar")
+```
+
+```{r}
+# extract data for coordinates on map 
+
+myKey <- 'AIzaSyAZqc_P0WhlKRTZAG-B5q5ZaI4fbe-4yNI'
+register_google(key = myKey, account_type = "standard")
+```
+
+```{r}
+World.map <- get_map(location = c(lon = 0, lat = 0), source = "google", color="color",zoom=1, size = c(640,360))
+ggmap(World.map) + geom_point(data=Mask_Final_Data,
+             aes(x=LocationLongitude, y=LocationLatitude), color = '#011f4b', alpha=0.7, size = 2)
+```
+
+```{r}
+US.map <- get_map("United States", color="color",zoom=4)
+ggmap(US.map) + geom_point(data=Mask_Final_Data,
+             aes(x=LocationLongitude, y=LocationLatitude), color = '#011f4b', alpha=0.7, size = 2)
+```
+```{r}
+Europe.map <- get_map("Europe", color="color",zoom=4)
+ggmap(Europe.map) + geom_point(data=Mask_Final_Data,
+             aes(x=LocationLongitude, y=LocationLatitude), color = '#011f4b', alpha=0.7, size = 2)
+```
+
+```{r}
+India.map <- get_map("India", color="color",zoom=5)
+ggmap(India.map) + geom_point(data=Mask_Final_Data,
+             aes(x=LocationLongitude, y=LocationLatitude), color = '#011f4b', alpha=0.7, size = 2)
+```
+
+```{r}
+SEAsia.map <- get_map("Southeast Asia", color="color",zoom=4)
+ggmap(SEAsia.map) + geom_point(data=Mask_Final_Data,
+             aes(x=LocationLongitude, y=LocationLatitude), color = '#011f4b', alpha=0.7, size = 2)
+```
+
+
+```{r}
+Japan.map <- get_map("Japan", color="color",zoom=6)
+ggmap(Japan.map) + geom_point(data=Mask_Final_Data,
+             aes(x=LocationLongitude, y=LocationLatitude), color = '#011f4b', alpha=0.7, size = 2)
+```
+
+```{r}
+## change variable type
+Mask_Final_Data <- mutate_at(Mask_Final_Data, .vars = vars(Q13), .funs = as_factor)
+```
+
+#### Awareness of Ear Hook Feature 
+```{r fig.width = 7, fig.height = 12.92, dpi = 96}
+result <- goodness(Mask_Final_Data, var = "Q14", p = 0.5)
+summary(result, check = c("observed", "expected", "chi_sq"))
+```
+An equal distribution would have 0.5 probability for each awareness. Using the Chi-Squared test we get a p_value of 0.002, which is lower than our significance level of 0.05. Therefore we reject the null hypothesis that the proportion of awareness of the ear hook feature is equal. There is enough evidence for us to accept the alternate hypothesis that they are unequal, there are more people who are unaware than those who are.
+
+
+```{r fig.width = 7, fig.height = 12.92, dpi = 96}
+result <- cross_tabs(
+  Mask_Final_Data, 
+  var1 = "Q10_5", 
+  var2 = "Q10_4"
+)
+summary(result, check = c("chi_sq"))
+```
+The resulting p_value of the Two-Way Chi-Squared Test Statistic is not less than 0.05, therefore we cannot reject the null hypothesis. We cannot conclude that there is an association between importance in quality of serum and importance of fit to face.
+
+```{r fig.width = 7, fig.height = 12.92, dpi = 96}
+result <- cross_tabs(
+  Mask_Final_Data, 
+  var1 = "Q10_6", 
+  var2 = "Q10_4"
+)
+summary(result, check = c("chi_sq"))
+```
+The resulting p_value of the Two-Way Chi-Squared Test Statistic is 0.001. Since it is less than the significance level is 0.05, we can reject the null hypothesis. There is evidence to conclude that there is a relationship between importance of quality of sheet and importance of fit to face.
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_1 = refactor(Q10_1, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_2 = refactor(Q10_2, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_3 = refactor(Q10_3, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_4 = refactor(Q10_4, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_5 = refactor(Q10_5, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_6 = refactor(Q10_6, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q10_7 = refactor(Q10_7, levs = c("Extremely important","Very important","Moderately important","Slightly important","Not at all important"), repl = ""))
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q10_6", "Q10_4"), 
+  normalize = "row", 
+  data_filter = "Q10_4 != 'NA'  & Q10_6 != 'NA'",
+  tabsort = "Q10_4", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Fit to Face Importance vs Quality of sheet Importance \n (Normalized to Fit to Face Importance)", x = "Quality of Sheet Importance", fill = 'Fit to Face Importance')
+# dtab(result, perc = TRUE) %>% render()
+```
+
+From observing the table and plot, the correlation is positive. People who think Quality of Mask is important also think Fit-To-Face is important, in a growing fashion.
+
+#### Impact of Recommendation on Mask Selection
+```{r fig.width = 7, fig.height = 12.92, dpi = 96}
+result <- goodness(Mask_Final_Data, var = "Q10_3")
+summary(result, check = c("chi_sq"))
+```
+An equal distribution would have 0.2 probability for each importance group. Using the Chi-Squared test we get a p_value of less than 0.001, which is lower than our significance level of 0.05. Therefore we reject the null hypothesis that the proportion of recommendation importance of the ear hook feature is equal. There is enough evidence for us to accept the alternate hypothesis that they are unequal. However, if we look at the actual numbers of the questions, the most unequal ones are Moderately Important and Not at all important, which does not tell us a lot about people's consideration of recommendation importance.
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q10_3", 
+  normalize = "total", 
+  data_filter = "Q10_3 != 'NA'", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Normalized Importance of Recommendation on Mask Purchase", x = "Importance of Recommendation", fill = 'Fit to Face Importance')
+# dtab(result, perc = TRUE) %>% render()
+```
+
+```{r}
+## recode variable
+Mask_Final_Data <- mutate(Mask_Final_Data, Q19_rc = car::Recode(Q19, "'Maybe' = 0; 'No' = 0; 'Yes' = 1"))
+```
+
+```{r}
+## change variable type
+Mask_Final_Data <- mutate_at(Mask_Final_Data, .vars = vars(Q19_rc), .funs = as_integer)
+```
+
+```{r}
+result <- regress(
+  Mask_Final_Data, 
+  rvar = "Q19_rc", 
+  evar = "Q10_2"
+)
+summary(result)
+```
+
+```{r}
+## recode variable
+Mask_Final_Data <- mutate(Mask_Final_Data, Q16_rc = car::Recode(Q16, "'No' = 0; 'Yes' = 1"))
+```
+
+```{r}
+## change variable type
+Mask_Final_Data <- mutate_at(Mask_Final_Data, .vars = vars(Q16_rc), .funs = as_integer)
+```
+
+
+```{r}
+result <- regress(
+  Mask_Final_Data, 
+  rvar = "Q16_rc", 
+  evar = "Q10_1"
+)
+summary(result)
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q17", 
+  normalize = "total", 
+  data_filter = "Q16 == 'Yes'", 
+  tabsort = "n_obs", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Distribution of people who liked using sheet masks with ear hooks", x = "")
+# dtab(result, perc = TRUE) %>% render()
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q15", 
+  normalize = "total", 
+  data_filter = "Q15 != ''", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE)
+# dtab(result, perc = TRUE) %>% render()
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q18", 
+  normalize = "total", 
+  data_filter = "Q16 == 'No'", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Distribution of people who disliked using \n sheet masks with ear hooks", x = "")
+# dtab(result, perc = TRUE) %>% render()
+```
+```{r}
+## change variable type
+Mask_Final_Data <- mutate_ext(Mask_Final_Data, .vars = vars(Q10_1, Q10_2, Q10_3, Q10_4, Q10_5, Q10_6, Q10_7), .funs = as_integer, .ext = "_int")
+```
+
+```{r fig.width = 9.96, fig.height = 9.96, dpi = 96}
+result <- correlation(
+  Mask_Final_Data, 
+  vars = c(
+    "Q10_1_int", "Q10_2_int", "Q10_3_int", "Q10_4_int", "Q10_5_int", 
+    "Q10_6_int", "Q10_7_int"
+  )
+)
+summary(result)
+plot(result, nrobs = -1)
+```
+
+#### Q19
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q19", 
+  normalize = "total", 
+  data_filter = "Q19 != ''", 
+  tabsort = "n_obs", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE)
+# dtab(result, perc = TRUE) %>% render()
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q13 = refactor(Q13, levs = c("< 50c","50c - $1","$1 - $3","$3 - $5","$5 - $10","> $10"), repl = ""))
+```
+
+```{r}
+## change factor levels
+Mask_Final_Data <- mutate(Mask_Final_Data, Q22 = refactor(Q22, levs = c("$0","10 - 50c","50c - $1","$1 - $3","$3 - $5"), repl = ""))
+```
+
+#### Q13
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q13", 
+  normalize = "total", 
+  data_filter = "Q13 != ''", 
+  tabsort = "n_obs", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Distribution of Current expenditure per sheet mask", x = "Current expenditure per sheet mask")
+# dtab(result, perc = TRUE) %>% render()
+```
+
+#### Q22
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q22", 
+  normalize = "total", 
+  data_filter = "Q22 != ''", 
+  tabsort = "desc(n_obs)", 
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE)
+# dtab(result, perc = TRUE) %>% render()
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q22", "Q13"), 
+  normalize = "row", 
+  data_filter = "Q22 != '' & Q13 !=''", 
+  tabsort = "Q13", 
+  nr = Inf
+)
+summary(result, perc = TRUE, dec = 2)
+plot(result, perc = TRUE, flip = TRUE, dec = 2) + labs(title = "Current expenditure per sheet mask vs \n Additional Amount willing to pay for Ear Hooks \n (Normalized by current expenditure)", x = "Additional Amount willing to pay for Ear Hooks", fill = 'Current expenditure per sheet mask')
+# dtab(result) %>% render()
+```
+
+#### Convienient to Apply
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q17", 
+  normalize = "total", 
+  data_filter = "Q17 != ''", 
+  tabsort = "n_obs",
+  nr = Inf
+)
+summary(result, perc = TRUE)
+plot(result, perc = TRUE, flip = TRUE)
+# dtab(result, perc = TRUE) %>% render()
+```
+
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q16_rc", "Q10_1"), 
+  normalize = "row", 
+  data_filter = "Q16_rc != 'NA'", 
+  nr = Inf
+)
+summary(result, perc = TRUE, dec = 2)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Price Importance vs Opinion of survey takers who have used ear hooks\n (Normalized to Price Importance)(1 is Liked, 0 is Disliked)", x = "Opinion of survey takers who have used ear hooks", fill = 'Price Importance')
+# dtab(result, perc = TRUE, dec = 2) %>% render()
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = c("Q19_rc", "Q10_2"), 
+  normalize = "row", 
+  data_filter = "Q19_rc != 'NA'", 
+  nr = Inf
+)
+summary(result, perc = TRUE, dec = 2)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Brand Name Importance vs Willingness to use sheet masks with Ear Hooks\n (Normalized to Brand Name Importance)(1 is Willing, 0 is Unwilling)", x = "Willingness to use sheet masks with Ear Hooks", fill = 'Brand Name Importance')
+# dtab(result, perc = TRUE, dec = 2) %>% render()
+```
+
+```{r fig.width = 8.08, fig.height = 4.31, dpi = 96}
+result <- pivotr(
+  Mask_Final_Data, 
+  cvars = "Q10_2", 
+  normalize = "total", 
+  data_filter = "Q10_2 != 'NA'", 
+  nr = Inf
+)
+summary(result, perc = TRUE, dec = 2)
+plot(result, perc = TRUE, flip = TRUE) + labs(title = "Distribution of Brand Name Importance", x = 'Brand Name Importance')
+# dtab(result, perc = TRUE, dec = 2) %>% render()
+```
