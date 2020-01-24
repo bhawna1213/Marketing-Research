@@ -1,6 +1,6 @@
 ---
 title: "Final Project"
-author: "Ming Ki Toby Cheng"
+author: "Bhawna Gupta"
 date: "11/27/2019"
 output: html_document
 ---
@@ -105,7 +105,7 @@ qmplot(x=LocationLongitude, y=LocationLatitude, data = Mask_Final_Data)
 ```{r}
 # extract data for coordinates on map 
 
-myKey <- 'AIzaSyAZqc_P0WhlKRTZAG-B5q5ZaI4fbe-4yNI'
+myKey <- '********************'
 register_google(key = myKey, account_type = "standard")
 ```
 
